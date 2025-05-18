@@ -1,4 +1,4 @@
-/*pipeline {
+pipeline {
     agent { label "Jenkins-Agent" }
     environment {
               APP_NAME = "register-app-pipeline"
@@ -41,62 +41,5 @@
             }
         }
       
-    }
-}*/
-pipeline {
-    agent { label "Jenkins-Agent" }
-
-    environment {
-        APP_NAME = "register-app-pipeline"
-        IMAGE_TAG = "1.0.0-${BUILD_NUMBER}"
-    }
-
-    stages {
-        stage("Cleanup Workspace") {
-            steps {
-                cleanWs()
-            }
-        }
-
-        stage("Checkout from SCM") {
-            steps {
-                checkout([$class: 'GitSCM',
-                    branches: [[name: '*/main']],
-                    userRemoteConfigs: [[
-                        url: 'https://github.com/1DS22CS065Chaithanya/gitops-register-app',
-                        credentialsId: 'github'
-                    ]]
-                ])
-            }
-        }
-
-        stage("Update the Deployment Tags") {
-            steps {
-                sh """
-                    echo "Before:"
-                    cat deployment.yaml
-                    sed -i 's|image: .*/${APP_NAME}:.*|image: chaithanya1907/${APP_NAME}:${IMAGE_TAG}|g' deployment.yaml
-                    echo "After:"
-                    cat deployment.yaml
-                """
-            }
-        }
-
-        stage("Push the changed deployment file to Git") {
-            steps {
-                sh """
-                    git config user.name "1DS22CS065Chaithanya"
-                    git config user.email "chaithanyashetty15@gmail.com"
-                    git add deployment.yaml
-                    git commit -m "Updated Deployment Manifest" || echo "No changes to commit"
-                """
-                withCredentials([usernamePassword(credentialsId: 'github', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
-                    sh """
-                        git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/1DS22CS065Chaithanya/gitops-register-app.git
-                        git push origin main
-                    """
-                }
-            }
-        }
     }
 }
