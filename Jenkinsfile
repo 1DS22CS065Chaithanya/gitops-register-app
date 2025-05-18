@@ -60,15 +60,23 @@ pipeline {
 
         stage("Checkout from SCM") {
             steps {
-                git branch: 'main', credentialsId: 'github', url: 'https://github.com/1DS22CS065Chaithanya/gitops-register-app'
+                checkout([$class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/1DS22CS065Chaithanya/gitops-register-app',
+                        credentialsId: 'github'
+                    ]]
+                ])
             }
         }
 
         stage("Update the Deployment Tags") {
             steps {
                 sh """
+                    echo "Before:"
                     cat deployment.yaml
-                    sed -i 's|${APP_NAME}.*|${APP_NAME}:${IMAGE_TAG}|g' deployment.yaml
+                    sed -i 's|image: .*/${APP_NAME}:.*|image: chaithanya1907/${APP_NAME}:${IMAGE_TAG}|g' deployment.yaml
+                    echo "After:"
                     cat deployment.yaml
                 """
             }
@@ -77,8 +85,8 @@ pipeline {
         stage("Push the changed deployment file to Git") {
             steps {
                 sh """
-                    git config --global user.name "1DS22CS065Chaithanya"
-                    git config --global user.email "chaithanyashetty15@gmail.com"
+                    git config user.name "1DS22CS065Chaithanya"
+                    git config user.email "chaithanyashetty15@gmail.com"
                     git add deployment.yaml
                     git commit -m "Updated Deployment Manifest" || echo "No changes to commit"
                 """
@@ -92,4 +100,3 @@ pipeline {
         }
     }
 }
-
